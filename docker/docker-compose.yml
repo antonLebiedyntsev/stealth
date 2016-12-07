@@ -1,0 +1,13 @@
+wordpress:
+  image: wordpress:latest
+  links:
+    - mysql
+  ports:
+    - 8080:80
+  env_file:
+    - ./configs/wordpress.env
+
+mysql:
+  image: mysql:latest
+  env_file:
+    - ./configs/mysql.env

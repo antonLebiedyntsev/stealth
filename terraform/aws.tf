@@ -157,5 +157,3 @@ resource "aws_security_group" "stealth_elb" {
     cidr_blocks = ["${var.control_cidr}"]
   }
 }
-
-
