@@ -1,0 +1,17 @@
+---
+# These variables will be overwritten 
+
+MYSQL_ROOT_PASSWORD: "toor"
+MYSQL_DATABASE: "wordpress"
+MYSQL_USER: stealth
+MYSQL_PASSWORD: ojvfUbKox6N
+
+website_name: "_"
+app_name: "wordpress"
+
+# Database settings
+db_hostname: "mysql" 
+db_name: "{{ MYSQL_DATABASE }}"
+db_username: "{{ MYSQL_USER }}"
+db_password: "{{ MYSQL_PASSWORD }}"
+db_root_password: "{{ MYSQL_ROOT_PASSWORD }}"

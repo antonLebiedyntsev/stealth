@@ -1,0 +1,33 @@
+---
+- name: Prepare Environment apt-transport-https install for docker. 
+  apt:
+    name: apt-transport-https
+    update_cache: yes
+    state: present
+
+- name: Prepare Environment ca-certificates install for docker. 
+  apt:
+    name: ca-certificates
+    update_cache: yes
+    state: present
+
+- name: Add Docker repository key
+  apt_key:
+    id: "58118E89F3A912897C070ADBF76221572C52609D"
+    keyserver: "hkp://ha.pool.sks-keyservers.net:80"
+    state: present
+  register: add_repository_key
+  ignore_errors: true
+
+- name: Add Docker repository and update apt cache
+  apt_repository:
+    repo: "deb https://apt.dockerproject.org/repo ubuntu-trusty main"
+    mode: '644'
+    update_cache: yes
+    state: present
+
+- name: Install (or update) docker package
+  apt:
+    name: "docker-engine=1.10.0-0~trusty"
+    state: "present"
+    update_cache: yes

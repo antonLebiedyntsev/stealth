@@ -9,9 +9,14 @@
 #	var.instance_type
 #	var.instance_count
 #	var.app_name
-#	var.environment
+#	var.zone
+# var.ami_id
 #	var.my_name
-#	var.control_cidr (for prod - all, dev predefined cidr)
+#	var.control_cidr (host allowed for SSH)
+# var.web_cidr (for prod all, for dev predefined)
+# var.key_name
+# var.public_key
+# var.environment
 ###
 
 provider "aws" {
@@ -33,7 +38,7 @@ resource "aws_vpc" "stealth" {
 resource "aws_subnet" "stealth" {
   vpc_id = "${aws_vpc.stealth.id}"
   cidr_block = "10.0.0.0/24"
-  availability_zone = "${var.region}${var.environment}"
+  availability_zone = "${var.region}${var.zone}"
   tags {
   	Name = "${var.my_name}_subnet"
   }
@@ -63,35 +68,40 @@ resource "aws_route_table_association" "stealth" {
   route_table_id = "${aws_route_table.stealth.id}"
 }
 
+resource "aws_key_pair" "stealth" {
+  key_name = "${var.key_name}" 
+  public_key = "${var.public_key}"
+}
+
 # Create Instances
 resource "aws_instance" "stealth" {
 
   count = "${var.instance_count}"
-  ami = "ami-1081b807"
+  ami = "${var.ami_id}"
   instance_type = "${var.instance_type}"
-
+  associate_public_ip_address = true
+  key_name = "${var.key_name}"
   subnet_id = "${aws_subnet.stealth.id}"
-  availability_zone = "${var.region}${var.environment}"
+  availability_zone = "${var.region}${var.zone}"
+  security_groups = ["${aws_security_group.stealth.id}"]
   tags {
-  	Name = "${var.app_name}-${count.index}"
-  	ansibleFilter = "stealth${var.app_name}"
-    ansibleNodeType = "${var.app_name}"
-    ansibleNodeName = "${var.app_name}${count.index}"
+    Name = "${var.app_name}-${var.environment}-${format("%02d", count.index+1)}"
+    server_role = "${var.app_name}"
   }
 }
 
 # Create ELB for instances
 resource "aws_elb" "stealth" {
-    name = "${var.my_name}_elb"
+    name = "${var.my_name}"
     instances = ["${aws_instance.stealth.*.id}"]
     subnets = ["${aws_subnet.stealth.id}"]
-    cross_zone_load_balancing = false
 
+    cross_zone_load_balancing = false
     security_groups = ["${aws_security_group.stealth_elb.id}"]
 
     listener {
-      lb_port = 443
-      instance_port = 433
+      lb_port = 80
+      instance_port = 80
       lb_protocol = "TCP"
       instance_protocol = "TCP"
     }
@@ -100,7 +110,7 @@ resource "aws_elb" "stealth" {
       healthy_threshold = 2
       unhealthy_threshold = 2
       timeout = 15
-      target = "HTTP:433/"
+      target = "HTTP:80/"
       interval = 30
     }
     tags {
@@ -117,24 +127,32 @@ resource "aws_security_group" "stealth" {
   egress {
     from_port = 0
     to_port = 0
-    protocol = "all"
+    protocol = "-1" #all
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Allow all internal
+  #Allow SSH for ansible
+  ingress {
+    from_port = "22"
+    to_port = "22"
+    protocol = "TCP" # ALL
+    cidr_blocks = ["${var.control_cidr}"]
+  }
+
+  # allows traffic from the SG itself
   ingress {
     from_port = 0
     to_port = 0
-    protocol = "all"
+    protocol = "-1" #all
     self = true
   }
 
-  # Allow all traffic 
+  # Allow all traffic In subbnet 
   ingress {
     from_port = 0
     to_port = 0
-    protocol = "all"
-    security_groups = ["${aws_security_group.stealth_elb.id}"]
+    protocol = "-1" #all
+    cidr_blocks = ["10.0.0.0/24"]
   }
 }
 
@@ -146,14 +164,18 @@ resource "aws_security_group" "stealth_elb" {
   egress {
     from_port = 0
     to_port = 0
-    protocol = "all"
+    protocol = "-1" #all
     cidr_blocks = ["0.0.0.0/0"]
   }
     # Allow inbound traffic to the port 
   ingress {
-    from_port = "https"
-    to_port = "https"
+    from_port = "80"
+    to_port = "80"
     protocol = "TCP"
-    cidr_blocks = ["${var.control_cidr}"]
+    cidr_blocks = ["${var.web_cidr}"]
   }
+
 }
+
+
+

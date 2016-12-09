@@ -1,0 +1,27 @@
+---
+- name : "Copy nginx Config"
+  tmplate:
+    src: 
+- name: "Docker - start nginx container"
+  docker:
+    image: "nginx:alpine"
+    state: restarted
+    volumes:
+      - /etc/nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf:ro
+    name: nginx
+    ports: 
+      - 80:80
+    links: 
+      - "{{ app_name }}:{{ app_name }}"
+
+- name: "Docker - start {{ app_name }} container"
+  docker:
+    image: "wordpress:latest"
+    state: restarted
+    name: "{{ app_name }}"
+    env:
+      WORDPRESS_DB_HOST: "mysql"
+      WORDPRESS_DB_USER: "{{ db_username }}"
+      WORDPRESS_DB_PASSWORD: "{{ db_password }}"
+    extra_hosts:
+      mysql: "{{ db_hostname }}"

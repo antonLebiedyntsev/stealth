@@ -1,0 +1,5 @@
+- hosts: aws_tag_server_role_wordpress
+  become: yes
+  remote_user: ubuntu
+  roles:
+    - "{{ app_name }}"
