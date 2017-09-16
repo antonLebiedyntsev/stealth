@@ -13,3 +13,6 @@ if [  -z "$AWS_ACCESS_KEY_ID" ]; then
 	export AWS_ACCESS_KEY_ID && \
 	echo "AWS_ACCESS_KEY_ID Key installed"
 fi
+
+
+# test

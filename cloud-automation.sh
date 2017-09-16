@@ -1,5 +1,8 @@
 #! /usr/bin/env bash
 
+
+# test
+
 ###
 #	This is buildin tool for docker deployments to AWS
 #	Creates AWS infrastructure
